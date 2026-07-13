@@ -16,6 +16,11 @@ const config = {
     uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/playforge',
   },
 
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  },
+
   // Uncomment when auth is ready
   // jwt: {
   //   secret: process.env.JWT_SECRET,

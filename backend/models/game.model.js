@@ -30,6 +30,12 @@ const gameSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    promptHash: {
+      type: String,
+      required: [true, 'Prompt hash is required'],
+      index: true,
+    },
   },
   {
     timestamps: true, // adds createdAt & updatedAt
@@ -37,6 +43,9 @@ const gameSchema = new mongoose.Schema(
 );
 
 // ─── Indexes ────────────────────────────────────────────────
+
+// Unique hash for prompt cache lookups (primary cache key)
+gameSchema.index({ promptHash: 1 }, { unique: true });
 
 // Text index for prompt search / lookup
 gameSchema.index({ prompt: 'text', title: 'text' });
