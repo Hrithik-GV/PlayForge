@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import config from './config/index.js';
+import connectDB from './config/db.js';
 import healthRoutes from './routes/health.routes.js';
 
 // ─── App ────────────────────────────────────────────────────
@@ -50,13 +51,19 @@ app.use((err, _req, res, _next) => {
 });
 
 // ─── Start ──────────────────────────────────────────────────
-app.listen(config.port, () => {
-  console.log(`
+const start = async () => {
+  await connectDB();
+
+  app.listen(config.port, () => {
+    console.log(`
   ⚡ PlayForge API
   ├─ env:  ${config.nodeEnv}
   ├─ port: ${config.port}
   └─ cors: ${config.cors.origins.join(', ')}
-  `);
-});
+    `);
+  });
+};
+
+start();
 
 export default app;

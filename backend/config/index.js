@@ -12,10 +12,9 @@ const config = {
       : ['http://localhost:8081'],
   },
 
-  // Uncomment when database is ready
-  // db: {
-  //   uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/playforge',
-  // },
+  db: {
+    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/playforge',
+  },
 
   // Uncomment when auth is ready
   // jwt: {
