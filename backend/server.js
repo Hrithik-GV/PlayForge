@@ -7,6 +7,7 @@ import config from './config/index.js';
 import connectDB from './config/db.js';
 import apiRoutes from './routes/api.routes.js';
 import gameRoutes from './routes/game.routes.js';
+import publishRoutes from './routes/publish.routes.js';
 
 // ─── App ────────────────────────────────────────────────────
 const app = express();
@@ -31,6 +32,8 @@ if (config.isDev) {
 // ─── Routes ─────────────────────────────────────────────────
 app.use('/api', apiRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api', publishRoutes);
+app.use('/', publishRoutes);
 
 // ─── 404 Handler ────────────────────────────────────────────
 app.use((_req, res) => {

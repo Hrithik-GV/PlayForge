@@ -41,6 +41,10 @@ export default function CreateScreen() {
   const [fallbackReason, setFallbackReason] = React.useState<string | null>(null);
   const [playMode, setPlayMode] = React.useState(false);
 
+  // Social feed publishing states
+  const [publishing, setPublishing] = React.useState(false);
+  const [published, setPublished] = React.useState(false);
+
   const handleForge = async () => {
     if (!prompt.trim()) {
       setError('Please input a prompt to forge your game.');
@@ -89,12 +93,41 @@ export default function CreateScreen() {
     }
   };
 
+  const handlePublish = async () => {
+    if (!generatedGame || !generatedGame._id) return;
+
+    setError(null);
+    setPublishing(true);
+
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/publish`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ gameId: generatedGame._id }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to publish game');
+      }
+
+      setPublished(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to publish game to feed');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   const handleCloseResult = () => {
     setGeneratedGame(null);
     setCacheHit(null);
     setFallbackUsed(false);
     setFallbackReason(null);
     setError(null);
+    setPublished(false);
   };
 
   return (
@@ -263,6 +296,32 @@ export default function CreateScreen() {
                 <MaterialIcons name="play-arrow" size={24} color="#000" />
                 <Text style={styles.playBtnText}>Launch Game</Text>
               </LinearGradient>
+            </Pressable>
+
+            {/* Publish to Feed */}
+            <Pressable 
+              style={[
+                styles.playBtn, 
+                published && { borderColor: 'rgba(0, 255, 102, 0.4)', borderWidth: 1 }
+              ]} 
+              onPress={handlePublish}
+              disabled={publishing || published}
+            >
+              {published ? (
+                <View style={[styles.playBtnGradient, { backgroundColor: 'rgba(0, 255, 102, 0.1)' }]}>
+                  <MaterialIcons name="check" size={22} color="#00ff66" />
+                  <Text style={[styles.playBtnText, { color: '#00ff66' }]}>Published to Feed</Text>
+                </View>
+              ) : (
+                <LinearGradient colors={[Colors.neonOrange, Colors.deepOrange]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.playBtnGradient}>
+                  {publishing ? (
+                    <ActivityIndicator color="#000" size="small" />
+                  ) : (
+                    <MaterialIcons name="share" size={22} color="#000" />
+                  )}
+                  <Text style={styles.playBtnText}>{publishing ? 'Publishing...' : 'Publish to Feed'}</Text>
+                </LinearGradient>
+              )}
             </Pressable>
 
             <Pressable style={styles.closeBtn} onPress={handleCloseResult}>

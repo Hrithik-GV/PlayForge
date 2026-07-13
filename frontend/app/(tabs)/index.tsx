@@ -6,10 +6,16 @@ import {
   ScrollView,
   Pressable,
   Dimensions,
+  RefreshControl,
+  Modal,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
+import Constants from 'expo-constants';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -34,15 +40,77 @@ const RECENT_GAMES = [
 
 const CATEGORIES = ['For You', 'Racing', 'Puzzle', 'RPG', 'Action', 'Horror'];
 
+// Helper to determine backend base URL
+const getApiBaseUrl = () => {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    return `http://${ip}:5000`;
+  }
+  return 'http://127.0.0.1:5000'; // fallback
+};
+
+const SvgThumbnail = ({ uri }: { uri?: string }) => {
+  if (!uri) {
+    return <MaterialIcons name="sports-esports" size={32} color="rgba(255,138,61,0.3)" />;
+  }
+  const source = uri.startsWith('data:') 
+    ? { html: `<html><body style="margin:0;padding:0;background:transparent;overflow:hidden;display:flex;justify-content:center;align-items:center;"><img src="${uri}" style="width:100%;height:100%;object-fit:cover;"/></body></html>` }
+    : { uri };
+
+  return (
+    <WebView
+      source={source}
+      style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+      scrollEnabled={false}
+      pointerEvents="none"
+    />
+  );
+};
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = React.useState('For You');
+
+  // Feed and gameplay modal states
+  const [feed, setFeed] = React.useState<any[]>([]);
+  const [loadingFeed, setLoadingFeed] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [selectedGame, setSelectedGame] = React.useState<any>(null);
+
+  const fetchFeed = async () => {
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/feed`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.feed)) {
+          setFeed(data.feed);
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching social feed:', err);
+    }
+  };
+
+  React.useEffect(() => {
+    setLoadingFeed(true);
+    fetchFeed().finally(() => setLoadingFeed(false));
+  }, []);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchFeed();
+    setRefreshing(false);
+  }, []);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.neonOrange} />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -147,30 +215,43 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.recentContainer}
-        >
-          {RECENT_GAMES.map((game) => (
-            <Pressable key={game.id} style={styles.gameCard}>
-              <LinearGradient
-                colors={[Colors.surfaceContainerHigh, Colors.surfaceContainerLowest]}
-                style={styles.gameCardGradient}
-              >
-                <MaterialIcons name="sports-esports" size={36} color="rgba(255,138,61,0.3)" />
-              </LinearGradient>
-              <View style={styles.gameCardContent}>
-                <Text style={styles.gameCardTitle} numberOfLines={1}>{game.title}</Text>
-                <Text style={styles.gameCardCreator}>{game.creator}</Text>
-                <View style={styles.gameCardStats}>
-                  <MaterialIcons name="play-arrow" size={12} color={Colors.textSecondary} />
-                  <Text style={styles.gameCardPlays}>{game.plays}</Text>
+        {loadingFeed && feed.length === 0 ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <ActivityIndicator color={Colors.neonOrange} size="large" />
+          </View>
+        ) : feed.length === 0 ? (
+          <View style={{ padding: 24, alignItems: 'center', backgroundColor: Colors.surfaceContainer, borderRadius: Radii.md, marginHorizontal: 20, marginBottom: 12 }}>
+            <MaterialIcons name="sports-esports" size={32} color={Colors.textSecondary} />
+            <Text style={{ fontFamily: 'PlusJakartaSans-Medium', color: Colors.textSecondary, marginTop: 8, textAlign: 'center' }}>
+              No games published to feed yet.
+            </Text>
+            <Text style={{ fontFamily: 'PlusJakartaSans-Regular', color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
+              Be the first to forge and publish a game!
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.recentContainer}
+          >
+            {feed.map((game) => (
+              <Pressable key={game._id} style={styles.gameCard} onPress={() => setSelectedGame(game)}>
+                <View style={styles.gameCardGradient}>
+                  <SvgThumbnail uri={game.thumbnail} />
                 </View>
-              </View>
-            </Pressable>
-          ))}
-        </ScrollView>
+                <View style={styles.gameCardContent}>
+                  <Text style={styles.gameCardTitle} numberOfLines={1}>{game.title}</Text>
+                  <Text style={styles.gameCardCreator} numberOfLines={1}>{game.prompt || 'Generated game'}</Text>
+                  <View style={styles.gameCardStats}>
+                    <MaterialIcons name="play-arrow" size={12} color={Colors.cyberGreen} />
+                    <Text style={[styles.gameCardPlays, { color: Colors.cyberGreen, fontFamily: 'PlusJakartaSans-Bold' }]}>PLAY</Text>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
 
         {/* Quick Forge Section */}
         <View style={styles.sectionHeader}>
@@ -195,6 +276,32 @@ export default function HomeScreen() {
           </LinearGradient>
         </Pressable>
       </ScrollView>
+
+      {/* WebView Gameplay Modal */}
+      <Modal visible={!!selectedGame} animationType="slide" presentationStyle="fullScreen">
+        <View style={styles.webContainer}>
+          <View style={[styles.webHeader, { paddingTop: Platform.OS === 'ios' ? insets.top : 12 }]}>
+            <Pressable onPress={() => setSelectedGame(null)} style={styles.webCloseBtn}>
+              <MaterialIcons name="arrow-back" size={24} color={Colors.onSurface} />
+              <Text style={styles.webCloseText}>Back to Feed</Text>
+            </Pressable>
+            <Text style={styles.webTitle} numberOfLines={1}>{selectedGame?.title}</Text>
+          </View>
+          {selectedGame?.gameCode ? (
+            <WebView
+              originWhitelist={['*']}
+              source={{ html: selectedGame.gameCode }}
+              style={styles.webview}
+              javaScriptEnabled
+              domStorageEnabled
+            />
+          ) : (
+            <View style={styles.noCodeContainer}>
+              <Text style={styles.noCodeText}>No game code was generated.</Text>
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -418,6 +525,8 @@ const styles = StyleSheet.create({
     height: 100,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    backgroundColor: Colors.surfaceContainerHigh,
   },
   gameCardContent: {
     padding: 12,
@@ -480,4 +589,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
   },
+
+  // Web playback container
+  webContainer: { flex: 1, backgroundColor: Colors.background },
+  webHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surfaceContainerHigh, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.05)' },
+  webCloseBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  webCloseText: { fontFamily: 'PlusJakartaSans-Bold', fontSize: 14, color: Colors.onSurface },
+  webTitle: { flex: 1, fontFamily: 'PlusJakartaSans-Bold', fontSize: 15, color: Colors.textSecondary, textAlign: 'right', marginLeft: 16 },
+  webview: { flex: 1, backgroundColor: '#000' },
+  noCodeContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  noCodeText: { fontFamily: 'PlusJakartaSans-Medium', fontSize: 14, color: Colors.textSecondary },
 });
