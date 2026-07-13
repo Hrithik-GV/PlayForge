@@ -37,7 +37,11 @@ export const generateGame = async (rawPrompt) => {
     prompt: normalized,
     promptHash: hash,
     gameCode: generated.gameCode,
-    thumbnail: generated.thumbnail,
+    description: generated.description,
+    html: generated.html,
+    css: generated.css,
+    javascript: generated.javascript,
+    thumbnail: generated.thumbnail || '',
     isFallback: false,
   });
 

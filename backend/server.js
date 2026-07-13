@@ -5,7 +5,7 @@ import morgan from 'morgan';
 
 import config from './config/index.js';
 import connectDB from './config/db.js';
-import healthRoutes from './routes/health.routes.js';
+import apiRoutes from './routes/api.routes.js';
 import gameRoutes from './routes/game.routes.js';
 
 // ─── App ────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ if (config.isDev) {
 }
 
 // ─── Routes ─────────────────────────────────────────────────
-app.use('/api', healthRoutes);
+app.use('/api', apiRoutes);
 app.use('/api/games', gameRoutes);
 
 // ─── 404 Handler ────────────────────────────────────────────

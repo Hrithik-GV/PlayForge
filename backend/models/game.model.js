@@ -21,6 +21,26 @@ const gameSchema = new mongoose.Schema(
       default: '',
     },
 
+    description: {
+      type: String,
+      default: '',
+    },
+
+    html: {
+      type: String,
+      default: '',
+    },
+
+    css: {
+      type: String,
+      default: '',
+    },
+
+    javascript: {
+      type: String,
+      default: '',
+    },
+
     thumbnail: {
       type: String,
       default: '',

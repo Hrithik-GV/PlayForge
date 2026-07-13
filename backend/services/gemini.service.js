@@ -5,6 +5,51 @@ import config from '../config/index.js';
  * Call Gemini to generate a playable game from a prompt.
  * Returns { title, gameCode, thumbnail }.
  */
+/**
+ * Compile separate HTML, CSS, and JS into a single playable HTML document.
+ */
+const compileGameCode = (html, css, javascript) => {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #121212;
+      color: #ffffff;
+      font-family: system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+    }
+    ${css}
+  </style>
+</head>
+<body>
+  ${html}
+  <script>
+    ${javascript}
+  </script>
+</body>
+</html>`;
+};
+
+/**
+ * Call Gemini to generate a playable game from a prompt.
+ * Returns { title, description, html, css, javascript, gameCode }.
+ */
 export const generateGameFromPrompt = async (prompt) => {
   if (!config.gemini.apiKey) {
     throw new Error('GEMINI_API_KEY is not set in environment variables');
@@ -13,13 +58,23 @@ export const generateGameFromPrompt = async (prompt) => {
   const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 
   const systemInstruction = `You are PlayForge, an AI game generator.
-Given a game idea prompt, generate:
-1. A catchy "title" for the game (max 120 chars).
-2. "gameCode" — a complete, self-contained HTML/JS game that runs in a single file. Use a <canvas> element. The game must be playable immediately. Keep it under 15 000 characters.
-3. "thumbnail" — leave as an empty string for now.
+Given a game idea prompt, generate a fully playable game. 
+You must strictly output a valid JSON object matching this schema:
+{
+  "title": "A catchy, short title for the game",
+  "description": "Short instructions/description of how to play the game",
+  "html": "The HTML markup. Prefer using a single <canvas id='gameCanvas'></canvas> and UI containers for score/controls if needed.",
+  "css": "The CSS styling. Ensure layout is mobile-friendly, responsive, centers components, and uses touch-friendly sizes (minimum 44x44px for buttons).",
+  "javascript": "Complete, working JavaScript logic. It MUST support touch control events (touchstart, touchmove, touchend) as well as keyboard controls. The game should be a simple arcade game with a maximum gameplay session duration of 2 minutes (e.g. survival timer, time-attack, or rapid challenge)."
+}
 
-Respond ONLY with valid JSON in this exact shape:
-{"title":"...","gameCode":"...","thumbnail":""}`;
+Constraints:
+- Mobile friendly and responsive.
+- Touch controls (essential for mobile playability!).
+- Simple arcade games only (e.g. dodge, catch, runner, clicker, simple puzzle).
+- HTML5 canvas is preferred for the main gameplay.
+- Max gameplay duration around 2 minutes.
+- Respond ONLY with valid JSON. Do not include markdown code block syntax.`;
 
   const model = genAI.getGenerativeModel({
     model: config.gemini.model,
@@ -43,10 +98,21 @@ Respond ONLY with valid JSON in this exact shape:
 
   try {
     const parsed = JSON.parse(cleaned);
+    
+    const title = parsed.title || 'Untitled Game';
+    const description = parsed.description || '';
+    const html = parsed.html || '';
+    const css = parsed.css || '';
+    const javascript = parsed.javascript || '';
+    const gameCode = compileGameCode(html, css, javascript);
+
     return {
-      title: parsed.title || 'Untitled Game',
-      gameCode: parsed.gameCode || '',
-      thumbnail: parsed.thumbnail || '',
+      title,
+      description,
+      html,
+      css,
+      javascript,
+      gameCode,
     };
   } catch (err) {
     console.error('[Gemini] Failed to parse response:', cleaned.slice(0, 200));
