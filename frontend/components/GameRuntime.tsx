@@ -180,7 +180,7 @@ export function GameRuntime({ gameCode, title, onClose }: GameRuntimeProps) {
               javaScriptEnabled={true}
               domStorageEnabled={true}
               scalesPageToFit={true}
-              decelerationRate="normal"
+              decelerationRate={0.998}
               startInLoadingState={true}
               renderLoading={() => (
                 <View style={styles.loaderContainer}>
