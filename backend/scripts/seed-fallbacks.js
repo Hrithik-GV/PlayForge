@@ -567,6 +567,24 @@ const fallbackGames = [
   }
 ];
 
+const generateDefaultSvg = (title) => {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250" width="400" height="250">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#ff8a3d;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#ff5e62;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#bg)" />
+    <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#ffffff">
+      ${title}
+    </text>
+    <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#ffffff" opacity="0.8">
+      PlayForge Arcade
+    </text>
+  </svg>`;
+};
+
 const seed = async () => {
   try {
     await connectDB();
@@ -578,6 +596,10 @@ const seed = async () => {
     console.log('Inserting fallback games...');
     for (const g of fallbackGames) {
       const compiledCode = compileGameCode(g.html, g.css, g.javascript);
+      const svg = generateDefaultSvg(g.title);
+      const base64Data = Buffer.from(svg.trim()).toString('base64');
+      const dataURI = `data:image/svg+xml;base64,${base64Data}`;
+
       await Game.create({
         title: g.title,
         description: g.description,
@@ -587,7 +609,8 @@ const seed = async () => {
         gameCode: compiledCode,
         isFallback: true,
         prompt: `Fallback seed: ${g.title}`,
-        promptHash: `fallback-${g.title.toLowerCase().replace(/\s+/g, '-')}`
+        promptHash: `fallback-${g.title.toLowerCase().replace(/\s+/g, '-')}`,
+        thumbnail: dataURI
       });
       console.log(`- Seeded: ${g.title}`);
     }

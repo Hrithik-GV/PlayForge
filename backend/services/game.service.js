@@ -2,6 +2,7 @@ import Game from '../models/game.model.js';
 import { normalizePrompt, hashPrompt } from '../utils/prompt.js';
 import { generateGameFromPrompt } from './gemini.service.js';
 import { getRandomFallbackGame, isGeminiFallbackError } from './fallback.service.js';
+import { uploadThumbnail } from './cloudinary.service.js';
 
 /**
  * Generate (or retrieve from cache) a game for the given prompt.
@@ -36,7 +37,11 @@ export const generateGame = async (rawPrompt) => {
   try {
     const generated = await generateGameFromPrompt(normalized);
 
-    // ─── 6: Save to MongoDB ────────────────────────────────
+    // ─── 6: Upload SVG thumbnail to Cloudinary ──────────────
+    console.log('[GameService] Uploading game thumbnail to Cloudinary...');
+    const thumbnailUrl = await uploadThumbnail(generated.thumbnailSvg, generated.title);
+
+    // ─── 7: Save to MongoDB ────────────────────────────────
     const game = await Game.create({
       title: generated.title,
       prompt: normalized,
@@ -46,7 +51,7 @@ export const generateGame = async (rawPrompt) => {
       html: generated.html,
       css: generated.css,
       javascript: generated.javascript,
-      thumbnail: generated.thumbnail || '',
+      thumbnail: thumbnailUrl,
       isFallback: false,
     });
 

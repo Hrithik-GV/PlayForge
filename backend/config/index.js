@@ -21,11 +21,11 @@ const config = {
     model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   },
 
-  // Uncomment when auth is ready
-  // jwt: {
-  //   secret: process.env.JWT_SECRET,
-  //   expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  // },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+    apiKey: process.env.CLOUDINARY_API_KEY || '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
+  },
 };
 
 export default config;

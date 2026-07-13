@@ -48,8 +48,26 @@ const compileGameCode = (html, css, javascript) => {
 
 /**
  * Call Gemini to generate a playable game from a prompt.
- * Returns { title, description, html, css, javascript, gameCode }.
+ * Returns { title, description, html, css, javascript, gameCode, thumbnailSvg }.
  */
+const generateDefaultSvg = (title) => {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250" width="400" height="250">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#ff8a3d;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#ff5e62;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#bg)" />
+    <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#ffffff">
+      ${title}
+    </text>
+    <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#ffffff" opacity="0.8">
+      PlayForge Arcade
+    </text>
+  </svg>`;
+};
+
 export const generateGameFromPrompt = async (prompt) => {
   if (!config.gemini.apiKey) {
     throw new Error('GEMINI_API_KEY is not set in environment variables');
@@ -65,7 +83,8 @@ You must strictly output a valid JSON object matching this schema:
   "description": "Short instructions/description of how to play the game",
   "html": "The HTML markup. Prefer using a single <canvas id='gameCanvas'></canvas> and UI containers for score/controls if needed.",
   "css": "The CSS styling. Ensure layout is mobile-friendly, responsive, centers components, and uses touch-friendly sizes (minimum 44x44px for buttons).",
-  "javascript": "Complete, working JavaScript logic. It MUST support touch control events (touchstart, touchmove, touchend) as well as keyboard controls. The game should be a simple arcade game with a maximum gameplay session duration of 2 minutes (e.g. survival timer, time-attack, or rapid challenge)."
+  "javascript": "Complete, working JavaScript logic. It MUST support touch control events (touchstart, touchmove, touchend) as well as keyboard controls. The game should be a simple arcade game with a maximum gameplay session duration of 2 minutes (e.g. survival timer, time-attack, or rapid challenge).",
+  "thumbnailSvg": "A clean, beautiful, minimalist SVG string that represents the game's thumbnail (e.g., viewBox '0 0 400 250', width 400, height 250, with a modern gradient background, icons/shapes representing the game, and the game title styled and centered). Ensure it is valid SVG and does not contain markdown/newlines inside the string value."
 }
 
 Constraints:
@@ -105,6 +124,11 @@ Constraints:
     const css = parsed.css || '';
     const javascript = parsed.javascript || '';
     const gameCode = compileGameCode(html, css, javascript);
+    
+    let thumbnailSvg = parsed.thumbnailSvg || '';
+    if (!thumbnailSvg.trim().startsWith('<svg')) {
+      thumbnailSvg = generateDefaultSvg(title);
+    }
 
     return {
       title,
@@ -113,6 +137,7 @@ Constraints:
       css,
       javascript,
       gameCode,
+      thumbnailSvg,
     };
   } catch (err) {
     console.error('[Gemini] Failed to parse response:', cleaned.slice(0, 200));
