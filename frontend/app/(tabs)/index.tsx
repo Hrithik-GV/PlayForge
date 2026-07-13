@@ -21,23 +21,37 @@ import { GameRuntime } from '@/components/GameRuntime';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Mock data for the home feed
-const FEATURED_GAME = {
-  title: 'Neon Drift',
-  creator: '@kaibuilds',
-  description: 'Outrun the grid at 300kph. One tap to boost, swipe to drift.',
-  plays: '1.2M',
-  likes: '48K',
-  genre: 'Racing',
-  vibe: 'Cyber',
+const getFilteredFeed = (feedList: any[], category: string) => {
+  if (category === 'For You') return feedList;
+  const catLower = category.toLowerCase();
+  
+  return feedList.filter(game => {
+    const title = (game.title || '').toLowerCase();
+    const prompt = (game.prompt || '').toLowerCase();
+    
+    if (catLower === 'racing') {
+      return title.includes('race') || title.includes('car') || title.includes('drift') || title.includes('drive') ||
+             prompt.includes('race') || prompt.includes('car') || prompt.includes('drift') || prompt.includes('drive');
+    }
+    if (catLower === 'puzzle') {
+      return title.includes('puzzle') || title.includes('block') || title.includes('brick') || title.includes('match') ||
+             prompt.includes('puzzle') || prompt.includes('block') || prompt.includes('brick') || prompt.includes('match');
+    }
+    if (catLower === 'rpg') {
+      return title.includes('rpg') || title.includes('dungeon') || title.includes('quest') || title.includes('hero') ||
+             prompt.includes('rpg') || prompt.includes('dungeon') || prompt.includes('quest') || prompt.includes('hero');
+    }
+    if (catLower === 'action') {
+      return title.includes('action') || title.includes('shoot') || title.includes('jump') || title.includes('run') || title.includes('fight') ||
+             prompt.includes('action') || prompt.includes('shoot') || prompt.includes('jump') || prompt.includes('run') || prompt.includes('fight');
+    }
+    if (catLower === 'horror') {
+      return title.includes('horror') || title.includes('scary') || title.includes('ghost') || title.includes('dark') ||
+             prompt.includes('horror') || prompt.includes('scary') || prompt.includes('ghost') || prompt.includes('dark');
+    }
+    return true;
+  });
 };
-
-const RECENT_GAMES = [
-  { id: '1', title: 'Block Rush', creator: '@pixelpete', plays: '2.4M', genre: 'Puzzle' },
-  { id: '2', title: 'Star Salvo', creator: '@novashoots', plays: '890K', genre: 'Shooter' },
-  { id: '3', title: 'Crystal Crypt', creator: '@alexforge', plays: '1.1M', genre: 'RPG' },
-  { id: '4', title: 'Cloud Bound', creator: '@skymaker', plays: '560K', genre: 'Action' },
-];
 
 const CATEGORIES = ['For You', 'Racing', 'Puzzle', 'RPG', 'Action', 'Horror'];
 
@@ -152,61 +166,63 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* Featured Game Card */}
-        <View style={styles.featuredCard}>
-          <LinearGradient
-            colors={['#ff8a3d', '#D35400', '#131313']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.featuredGradient}
-          >
-            {/* Game preview placeholder */}
-            <View style={styles.featuredImageArea}>
-              <MaterialIcons name="sports-esports" size={64} color="rgba(255,255,255,0.3)" />
+        {feed.length > 0 ? (
+          <View style={styles.featuredCard}>
+            <View style={[styles.featuredImageArea, { height: 180, overflow: 'hidden' }]}>
+              <SvgThumbnail uri={feed[0].thumbnail} />
               <View style={styles.liveTag}>
                 <View style={styles.liveDot} />
-                <Text style={styles.liveText}>LIVE</Text>
-              </View>
-            </View>
-          </LinearGradient>
-
-          <View style={styles.featuredContent}>
-            <View style={styles.featuredMeta}>
-              <View style={styles.avatarSmall}>
-                <Text style={styles.avatarText}>K</Text>
-              </View>
-              <Text style={styles.creatorText}>{FEATURED_GAME.creator}</Text>
-              <View style={styles.genreChip}>
-                <Text style={styles.genreChipText}>{FEATURED_GAME.genre}</Text>
+                <Text style={styles.liveText}>NEWEST FORGE</Text>
               </View>
             </View>
 
-            <Text style={styles.featuredTitle}>{FEATURED_GAME.title}</Text>
-            <Text style={styles.featuredDesc}>{FEATURED_GAME.description}</Text>
+            <View style={styles.featuredContent}>
+              <View style={styles.featuredMeta}>
+                <View style={styles.avatarSmall}>
+                  <Text style={styles.avatarText}>AI</Text>
+                </View>
+                <Text style={styles.creatorText}>@playforge_bot</Text>
+                <View style={styles.genreChip}>
+                  <Text style={styles.genreChipText}>Featured</Text>
+                </View>
+              </View>
 
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <MaterialIcons name="play-arrow" size={16} color={Colors.neonOrange} />
-                <Text style={styles.statText}>{FEATURED_GAME.plays} plays</Text>
+              <Text style={styles.featuredTitle}>{feed[0].title}</Text>
+              <Text style={styles.featuredDesc} numberOfLines={2}>
+                {feed[0].prompt || 'Play this newly forged game now!'}
+              </Text>
+
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <MaterialIcons name="play-arrow" size={16} color={Colors.neonOrange} />
+                  <Text style={styles.statText}>Community Playable</Text>
+                </View>
               </View>
-              <View style={styles.statItem}>
-                <MaterialIcons name="favorite" size={16} color={Colors.neonOrange} />
-                <Text style={styles.statText}>{FEATURED_GAME.likes}</Text>
-              </View>
+
+              <Pressable style={styles.playButton} onPress={() => setSelectedGame(feed[0])}>
+                <LinearGradient
+                  colors={[Colors.neonOrange, Colors.deepOrange]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.playButtonGradient}
+                >
+                  <MaterialIcons name="play-arrow" size={20} color="#000" />
+                  <Text style={styles.playButtonText}>Play Now</Text>
+                </LinearGradient>
+              </Pressable>
             </View>
-
-            <Pressable style={styles.playButton}>
-              <LinearGradient
-                colors={[Colors.neonOrange, Colors.deepOrange]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.playButtonGradient}
-              >
-                <MaterialIcons name="play-arrow" size={20} color="#000" />
-                <Text style={styles.playButtonText}>Play Now</Text>
-              </LinearGradient>
-            </Pressable>
           </View>
-        </View>
+        ) : (
+          <View style={[styles.featuredCard, { padding: 24, alignItems: 'center', justifyContent: 'center' }]}>
+            <MaterialIcons name="auto-awesome" size={48} color={Colors.neonOrange} />
+            <Text style={{ fontFamily: 'PlusJakartaSans-Bold', color: Colors.onSurface, fontSize: 16, marginTop: 12 }}>
+              Forge Your First Game
+            </Text>
+            <Text style={{ fontFamily: 'PlusJakartaSans-Regular', color: Colors.textSecondary, fontSize: 13, marginTop: 4, textAlign: 'center', paddingHorizontal: 16 }}>
+              No games published yet. Head over to the Create tab to forge a game and see it featured here!
+            </Text>
+          </View>
+        )}
 
         {/* Recently Forged Section */}
         <View style={styles.sectionHeader}>
@@ -231,27 +247,45 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.recentContainer}
-          >
-            {feed.map((game) => (
-              <Pressable key={game._id} style={styles.gameCard} onPress={() => setSelectedGame(game)}>
-                <View style={styles.gameCardGradient}>
-                  <SvgThumbnail uri={game.thumbnail} />
+          (() => {
+            const filtered = getFilteredFeed(feed, activeCategory);
+            if (filtered.length === 0) {
+              return (
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: Colors.surfaceContainer, borderRadius: Radii.md, marginHorizontal: 20, marginBottom: 12 }}>
+                  <MaterialIcons name="grid-view" size={32} color={Colors.textSecondary} />
+                  <Text style={{ fontFamily: 'PlusJakartaSans-Medium', color: Colors.textSecondary, marginTop: 8, textAlign: 'center' }}>
+                    No games in category "{activeCategory}"
+                  </Text>
+                  <Text style={{ fontFamily: 'PlusJakartaSans-Regular', color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
+                    Try selecting a different category or forge a new game!
+                  </Text>
                 </View>
-                <View style={styles.gameCardContent}>
-                  <Text style={styles.gameCardTitle} numberOfLines={1}>{game.title}</Text>
-                  <Text style={styles.gameCardCreator} numberOfLines={1}>{game.prompt || 'Generated game'}</Text>
-                  <View style={styles.gameCardStats}>
-                    <MaterialIcons name="play-arrow" size={12} color={Colors.cyberGreen} />
-                    <Text style={[styles.gameCardPlays, { color: Colors.cyberGreen, fontFamily: 'PlusJakartaSans-Bold' }]}>PLAY</Text>
-                  </View>
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
+              );
+            }
+            return (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.recentContainer}
+              >
+                {filtered.map((game) => (
+                  <Pressable key={game._id} style={styles.gameCard} onPress={() => setSelectedGame(game)}>
+                    <View style={styles.gameCardGradient}>
+                      <SvgThumbnail uri={game.thumbnail} />
+                    </View>
+                    <View style={styles.gameCardContent}>
+                      <Text style={styles.gameCardTitle} numberOfLines={1}>{game.title}</Text>
+                      <Text style={styles.gameCardCreator} numberOfLines={1}>{game.prompt || 'Generated game'}</Text>
+                      <View style={styles.gameCardStats}>
+                        <MaterialIcons name="play-arrow" size={12} color={Colors.cyberGreen} />
+                        <Text style={[styles.gameCardPlays, { color: Colors.cyberGreen, fontFamily: 'PlusJakartaSans-Bold' }]}>PLAY</Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            );
+          })()
         )}
 
         {/* Quick Forge Section */}
