@@ -11,9 +11,9 @@ const gameSchema = new mongoose.Schema(
 
     prompt: {
       type: String,
-      required: [true, 'Prompt is required'],
       trim: true,
       maxlength: [2000, 'Prompt cannot exceed 2000 characters'],
+      default: '',
     },
 
     gameCode: {
@@ -53,7 +53,7 @@ const gameSchema = new mongoose.Schema(
 
     promptHash: {
       type: String,
-      required: [true, 'Prompt hash is required'],
+      default: '',
     },
   },
   {
@@ -64,7 +64,8 @@ const gameSchema = new mongoose.Schema(
 // ─── Indexes ────────────────────────────────────────────────
 
 // Unique hash for prompt cache lookups (primary cache key)
-gameSchema.index({ promptHash: 1 }, { unique: true });
+// Sparse: fallback games have no promptHash so they skip this index
+gameSchema.index({ promptHash: 1 }, { unique: true, sparse: true });
 
 // Text index for prompt search / lookup
 gameSchema.index({ prompt: 'text', title: 'text' });

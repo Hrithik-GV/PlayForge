@@ -37,6 +37,8 @@ export default function CreateScreen() {
   const [error, setError] = React.useState<string | null>(null);
   const [generatedGame, setGeneratedGame] = React.useState<any>(null);
   const [cacheHit, setCacheHit] = React.useState<boolean | null>(null);
+  const [fallbackUsed, setFallbackUsed] = React.useState<boolean>(false);
+  const [fallbackReason, setFallbackReason] = React.useState<string | null>(null);
   const [playMode, setPlayMode] = React.useState(false);
 
   const handleForge = async () => {
@@ -77,6 +79,8 @@ export default function CreateScreen() {
       const data = await response.json();
       setGeneratedGame(data.game);
       setCacheHit(data.cacheHit);
+      setFallbackUsed(data.fallbackUsed || false);
+      setFallbackReason(data.fallbackReason || null);
     } catch (err: any) {
       setError(err.message || 'Failed to connect to backend server');
     } finally {
@@ -88,6 +92,8 @@ export default function CreateScreen() {
   const handleCloseResult = () => {
     setGeneratedGame(null);
     setCacheHit(null);
+    setFallbackUsed(false);
+    setFallbackReason(null);
     setError(null);
   };
 
@@ -197,15 +203,22 @@ export default function CreateScreen() {
         <View style={styles.resultModalBg}>
           <View style={styles.resultModalCard}>
             <View style={styles.resultHeader}>
-              <Text style={styles.resultHeaderTitle}>Game Successfully Forged!</Text>
+              <Text style={styles.resultHeaderTitle}>
+                {fallbackUsed ? 'AI Server Busy' : 'Game Successfully Forged!'}
+              </Text>
               <Pressable onPress={handleCloseResult}>
                 <MaterialIcons name="close" size={24} color={Colors.textSecondary} />
               </Pressable>
             </View>
 
-            {/* Cache Badge */}
+            {/* Cache Badge / Fallback Badge */}
             <View style={styles.badgeContainer}>
-              {cacheHit ? (
+              {fallbackUsed ? (
+                <View style={[styles.badge, styles.badgeFallback]}>
+                  <MaterialIcons name="hourglass-empty" size={14} color={Colors.neonOrange} />
+                  <Text style={styles.badgeFallbackText}>FALLBACK ACTIVE</Text>
+                </View>
+              ) : cacheHit ? (
                 <View style={[styles.badge, styles.badgeCacheHit]}>
                   <MaterialIcons name="flash-on" size={14} color="#00ff66" />
                   <Text style={styles.badgeCacheHitText}>CACHE HIT (0ms latency)</Text>
@@ -218,14 +231,29 @@ export default function CreateScreen() {
               )}
             </View>
 
+            {/* Fallback Message Alert */}
+            {fallbackUsed && (
+              <View style={styles.fallbackAlert}>
+                <MaterialIcons name="warning" size={20} color={Colors.neonOrange} style={{ marginRight: 10 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fallbackAlertTitle}>AI is currently busy.</Text>
+                  <Text style={styles.fallbackAlertText}>
+                    Explore trending games while we prepare your game.
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Details */}
             <View style={styles.resultDetails}>
-              <Text style={styles.resultLabel}>GAME TITLE</Text>
+              <Text style={styles.resultLabel}>{fallbackUsed ? 'FALLBACK RETRO GAME' : 'GAME TITLE'}</Text>
               <Text style={styles.resultValue}>{generatedGame?.title}</Text>
 
-              <Text style={[styles.resultLabel, { marginTop: 12 }]}>PROMPT HASH (SHA-256)</Text>
+              <Text style={[styles.resultLabel, { marginTop: 12 }]}>
+                {fallbackUsed ? 'GAME IDENTIFIER' : 'PROMPT HASH (SHA-256)'}
+              </Text>
               <Text style={styles.hashValue} numberOfLines={1} ellipsizeMode="middle">
-                {generatedGame?.promptHash}
+                {generatedGame?.promptHash || 'N/A'}
               </Text>
             </View>
 
@@ -317,6 +345,11 @@ const styles = StyleSheet.create({
   badgeCacheHitText: { fontFamily: 'JetBrainsMono-Bold', fontSize: 11, color: '#00ff66', letterSpacing: 0.5 },
   badgeCacheMiss: { backgroundColor: 'rgba(255, 138, 61, 0.12)', borderWidth: 1, borderColor: 'rgba(255, 138, 61, 0.3)' },
   badgeCacheMissText: { fontFamily: 'JetBrainsMono-Bold', fontSize: 11, color: Colors.neonOrange, letterSpacing: 0.5 },
+  badgeFallback: { backgroundColor: 'rgba(255, 138, 61, 0.12)', borderWidth: 1, borderColor: 'rgba(255, 138, 61, 0.3)' },
+  badgeFallbackText: { fontFamily: 'JetBrainsMono-Bold', fontSize: 11, color: Colors.neonOrange, letterSpacing: 0.5 },
+  fallbackAlert: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 138, 61, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 138, 61, 0.25)', borderRadius: Radii.lg, padding: 14, marginBottom: 20 },
+  fallbackAlertTitle: { fontFamily: 'PlusJakartaSans-Bold', fontSize: 14, color: Colors.neonOrange },
+  fallbackAlertText: { fontFamily: 'PlusJakartaSans-Medium', fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   resultDetails: { backgroundColor: Colors.surfaceContainerLowest, borderRadius: Radii.lg, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(42, 42, 42, 0.4)' },
   resultLabel: { fontFamily: 'JetBrainsMono-Bold', fontSize: 10, color: Colors.textMuted, letterSpacing: 1 },
   resultValue: { fontFamily: 'PlusJakartaSans-Bold', fontSize: 16, color: Colors.onSurface, marginTop: 4 },

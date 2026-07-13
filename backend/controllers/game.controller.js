@@ -27,6 +27,8 @@ export const generate = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       cacheHit: result.cacheHit,
+      fallbackUsed: result.fallbackUsed,
+      ...(result.fallbackReason && { fallbackReason: result.fallbackReason }),
       game: result.game,
     });
   } catch (err) {
@@ -62,6 +64,8 @@ export const generateGranular = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       cacheHit: result.cacheHit,
+      fallbackUsed: result.fallbackUsed,
+      ...(result.fallbackReason && { fallbackReason: result.fallbackReason }),
       title: result.game.title,
       description: result.game.description,
       html: result.game.html,
