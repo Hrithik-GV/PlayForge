@@ -1,29 +1,16 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import config from '../config/index.js';
 
-let model = null;
-
-/**
- * Lazily initialise the Gemini model so the module
- * can be imported even if the API key isn't set yet.
- */
-const getModel = () => {
-  if (!model) {
-    if (!config.gemini.apiKey) {
-      throw new Error('GEMINI_API_KEY is not set in environment variables');
-    }
-    const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    model = genAI.getGenerativeModel({ model: config.gemini.model });
-  }
-  return model;
-};
-
 /**
  * Call Gemini to generate a playable game from a prompt.
  * Returns { title, gameCode, thumbnail }.
  */
 export const generateGameFromPrompt = async (prompt) => {
-  const gemini = getModel();
+  if (!config.gemini.apiKey) {
+    throw new Error('GEMINI_API_KEY is not set in environment variables');
+  }
+
+  const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
 
   const systemInstruction = `You are PlayForge, an AI game generator.
 Given a game idea prompt, generate:
@@ -31,12 +18,19 @@ Given a game idea prompt, generate:
 2. "gameCode" — a complete, self-contained HTML/JS game that runs in a single file. Use a <canvas> element. The game must be playable immediately. Keep it under 15 000 characters.
 3. "thumbnail" — leave as an empty string for now.
 
-Respond ONLY with valid JSON in this exact shape (no markdown fences, no explanation):
+Respond ONLY with valid JSON in this exact shape:
 {"title":"...","gameCode":"...","thumbnail":""}`;
 
-  const result = await gemini.generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+  const model = genAI.getGenerativeModel({
+    model: config.gemini.model,
     systemInstruction,
+    generationConfig: {
+      responseMimeType: 'application/json',
+    },
+  });
+
+  const result = await model.generateContent({
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
   });
 
   const raw = result.response.text().trim();

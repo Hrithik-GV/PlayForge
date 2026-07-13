@@ -34,7 +34,6 @@ const gameSchema = new mongoose.Schema(
     promptHash: {
       type: String,
       required: [true, 'Prompt hash is required'],
-      index: true,
     },
   },
   {
