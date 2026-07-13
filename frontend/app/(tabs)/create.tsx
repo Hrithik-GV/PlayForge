@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import Constants from 'expo-constants';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { GameRuntime } from '@/components/GameRuntime';
 
 const GENRES = ['Platformer', 'Racing', 'Puzzle', 'RPG', 'Shooter', 'Horror', 'Sandbox', 'Strategy'];
 const VIBES = ['Retro', 'Cyber', 'Fantasy', 'Minimal', 'Chaos', 'Chill', 'Neon', 'Dark'];
@@ -333,28 +334,11 @@ export default function CreateScreen() {
 
       {/* WebView Gameplay Modal */}
       <Modal visible={playMode} animationType="slide" presentationStyle="fullScreen">
-        <View style={styles.webContainer}>
-          <View style={[styles.webHeader, { paddingTop: Platform.OS === 'ios' ? insets.top : 12 }]}>
-            <Pressable onPress={() => setPlayMode(false)} style={styles.webCloseBtn}>
-              <MaterialIcons name="arrow-back" size={24} color={Colors.onSurface} />
-              <Text style={styles.webCloseText}>Back to Forge</Text>
-            </Pressable>
-            <Text style={styles.webTitle} numberOfLines={1}>{generatedGame?.title}</Text>
-          </View>
-          {generatedGame?.gameCode ? (
-            <WebView
-              originWhitelist={['*']}
-              source={{ html: generatedGame.gameCode }}
-              style={styles.webview}
-              javaScriptEnabled
-              domStorageEnabled
-            />
-          ) : (
-            <View style={styles.noCodeContainer}>
-              <Text style={styles.noCodeText}>No game code was generated.</Text>
-            </View>
-          )}
-        </View>
+        <GameRuntime
+          gameCode={generatedGame?.gameCode || ''}
+          title={generatedGame?.title || 'Game Player'}
+          onClose={() => setPlayMode(false)}
+        />
       </Modal>
     </View>
   );
@@ -418,14 +402,4 @@ const styles = StyleSheet.create({
   playBtnText: { fontFamily: 'PlusJakartaSans-Bold', fontSize: 16, color: '#000' },
   closeBtn: { width: '100%', paddingVertical: 14, alignItems: 'center', borderRadius: Radii.full, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.02)' },
   closeBtnText: { fontFamily: 'PlusJakartaSans-Bold', fontSize: 15, color: Colors.onSurface },
-
-  // Web playback container
-  webContainer: { flex: 1, backgroundColor: Colors.background },
-  webHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surfaceContainerHigh, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.05)' },
-  webCloseBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  webCloseText: { fontFamily: 'PlusJakartaSans-Bold', fontSize: 14, color: Colors.onSurface },
-  webTitle: { flex: 1, fontFamily: 'PlusJakartaSans-Bold', fontSize: 15, color: Colors.textSecondary, textAlign: 'right', marginLeft: 16 },
-  webview: { flex: 1, backgroundColor: '#000' },
-  noCodeContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  noCodeText: { fontFamily: 'PlusJakartaSans-Medium', fontSize: 14, color: Colors.textSecondary },
 });

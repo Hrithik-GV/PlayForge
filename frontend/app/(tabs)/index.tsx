@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import Constants from 'expo-constants';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { GameRuntime } from '@/components/GameRuntime';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -279,28 +280,11 @@ export default function HomeScreen() {
 
       {/* WebView Gameplay Modal */}
       <Modal visible={!!selectedGame} animationType="slide" presentationStyle="fullScreen">
-        <View style={styles.webContainer}>
-          <View style={[styles.webHeader, { paddingTop: Platform.OS === 'ios' ? insets.top : 12 }]}>
-            <Pressable onPress={() => setSelectedGame(null)} style={styles.webCloseBtn}>
-              <MaterialIcons name="arrow-back" size={24} color={Colors.onSurface} />
-              <Text style={styles.webCloseText}>Back to Feed</Text>
-            </Pressable>
-            <Text style={styles.webTitle} numberOfLines={1}>{selectedGame?.title}</Text>
-          </View>
-          {selectedGame?.gameCode ? (
-            <WebView
-              originWhitelist={['*']}
-              source={{ html: selectedGame.gameCode }}
-              style={styles.webview}
-              javaScriptEnabled
-              domStorageEnabled
-            />
-          ) : (
-            <View style={styles.noCodeContainer}>
-              <Text style={styles.noCodeText}>No game code was generated.</Text>
-            </View>
-          )}
-        </View>
+        <GameRuntime
+          gameCode={selectedGame?.gameCode || ''}
+          title={selectedGame?.title || 'Game Player'}
+          onClose={() => setSelectedGame(null)}
+        />
       </Modal>
     </View>
   );
@@ -589,14 +573,4 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
   },
-
-  // Web playback container
-  webContainer: { flex: 1, backgroundColor: Colors.background },
-  webHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surfaceContainerHigh, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.05)' },
-  webCloseBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  webCloseText: { fontFamily: 'PlusJakartaSans-Bold', fontSize: 14, color: Colors.onSurface },
-  webTitle: { flex: 1, fontFamily: 'PlusJakartaSans-Bold', fontSize: 15, color: Colors.textSecondary, textAlign: 'right', marginLeft: 16 },
-  webview: { flex: 1, backgroundColor: '#000' },
-  noCodeContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  noCodeText: { fontFamily: 'PlusJakartaSans-Medium', fontSize: 14, color: Colors.textSecondary },
 });
